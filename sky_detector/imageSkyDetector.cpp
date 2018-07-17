@@ -132,10 +132,10 @@ void SkyAreaDetector::detect(const std::string &image_file_path, const std::stri
     int image_width = _src_img.size[1];
 
     cv::Mat sky_image_full = cv::Mat::zeros(image_height, image_width, CV_8UC3);
-    sky_image_full.setTo(cv::Scalar(0, 0, 125), sky_mask);
+    sky_image_full.setTo(cv::Scalar(0, 0, 255), sky_mask);
     cv::addWeighted(_src_img, 1, sky_image_full, 1, 0, sky_image);
 
-    cv::imwrite(output_path, _src_img);
+    cv::imwrite(output_path, sky_image);
 
     LOG(INFO) << "图像: " << image_file_path << "检测完毕";
 }
