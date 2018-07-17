@@ -27,6 +27,8 @@ public:
     void detect(const std::string &image_file_path,
                 const std::string &output_path);
 
+    void batch_detect(const std::string &image_dir, const std::string &output_dir);
+
 private:
     cv::Mat _src_img; // 原始路淘图像
 

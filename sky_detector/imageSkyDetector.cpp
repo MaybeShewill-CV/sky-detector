@@ -75,7 +75,7 @@ bool SkyAreaDetector::extract_sky(const cv::Mat &src_image, cv::Mat &sky_mask) {
 
     std::vector<int> sky_border_optimal = extract_border_optimal(src_image);
 
-    if (!has_sky_region(sky_border_optimal, image_height / 30, image_height / 4, 5)) {
+    if (!has_sky_region(sky_border_optimal, image_height / 30, image_height / 4, 2)) {
 #ifdef DEBUG
         LOG(INFO) << "没有提取到天空区域" << std::endl;
 #endif
@@ -129,12 +129,69 @@ void SkyAreaDetector::detect(const std::string &image_file_path, const std::stri
     int image_width = _src_img.size[1];
 
     cv::Mat sky_image_full = cv::Mat::zeros(image_height, image_width, CV_8UC3);
-    _src_img.setTo(cv::Scalar(0, 0, 255), sky_mask);
-//    cv::addWeighted(_src_img, 1, sky_image_full, 1, 0, sky_image);
+    sky_image_full.setTo(cv::Scalar(0, 0, 255), sky_mask);
+    cv::addWeighted(_src_img, 1, sky_image_full, 1, 0, sky_image);
 
-    cv::imwrite(output_path, _src_img);
+    cv::imwrite(output_path, sky_image);
 
     LOG(INFO) << "图像: " << image_file_path << "检测完毕";
+}
+
+void SkyAreaDetector::batch_detect(const std::string &image_dir, const std::string &output_dir) {
+
+    // 获取图像信息
+    std::vector<std::string> image_file_list;
+    file_processor::FileSystemProcessor::get_directory_files(image_dir,
+            image_file_list,
+            ".jpg",
+            file_processor::FileSystemProcessor::
+            SEARCH_OPTION_T::ALLDIRECTORIES);
+
+    LOG(INFO) << "开始批量提取天空区域";
+    LOG(INFO) << "--- 图像: --- 耗时(s): ---";
+
+    for (auto &image_file : image_file_list) {
+
+        auto start_t = std::chrono::high_resolution_clock::now();
+
+        auto image_file_name = file_processor::FileSystemProcessor::get_file_name(image_file);
+        auto output_path = file_processor::FileSystemProcessor::combine_path(output_dir, image_file_name);
+
+        // 加载图像
+        load_image(image_file);
+
+        // 提取天空区域
+        cv::Mat sky_mask;
+
+        if (extract_sky(_src_img, sky_mask)) {
+
+            // 制作掩码输出
+            cv::Mat sky_image;
+
+            int image_height = _src_img.size[0];
+            int image_width = _src_img.size[1];
+
+            cv::Mat sky_image_full = cv::Mat::zeros(image_height, image_width, CV_8UC3);
+            _src_img.setTo(cv::Scalar(0, 0, 255), sky_mask);
+//                cv::addWeighted(_src_img, 1, sky_image_full, 1, 0, sky_image);
+
+            cv::imwrite(output_path, _src_img);
+
+            auto end_t = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> cost_time = end_t - start_t;
+
+            LOG(INFO) << "---- " << image_file_name << " ---- "
+                      << cost_time.count() << "s" << std::endl;
+        } else {
+
+            cv::imwrite(output_path, _src_img);
+
+            LOG(INFO) << "---- " << image_file_name << " ---- "
+                      << "Null s" << std::endl;
+        }
+    }
+
+    LOG(INFO) << "批量提取完毕";
 }
 
 /***
@@ -497,16 +554,16 @@ bool SkyAreaDetector::has_sky_region(const std::vector<int> &border,
     }
 
     std::vector<int> border_diff(static_cast<int>(border.size() - 1), 0);
-    for (int i = static_cast<int>(border.size() - 1); i >= 0; i--) {
+    for (auto i = static_cast<int>(border.size() - 1); i >= 0; i--) {
         border_diff[i] = std::abs(border[i + 1] - border[i]);
     }
     double border_diff_mean = 0.0;
-    for (size_t i = 0; i < border_diff.size(); ++i) {
-        border_diff_mean += border_diff[i];
+    for (auto &diff_val : border_diff) {
+        border_diff_mean += diff_val;
     }
     border_diff_mean /= border_diff.size();
 
-    return !(border_mean < thresh_2 && border_diff_mean > thresh_3);
+    return !(border_mean < thresh_1 || (border_diff_mean > thresh_3 && border_mean < thresh_2));
 }
 
 /***

@@ -8,6 +8,9 @@
 #include <imageSkyDetector.h>
 #include <file_system_processor.h>
 
+#define BATCH_PROCESS
+//#define SINGLE_PROCESS
+
 
 int main(int argc, char **argv) {
 
@@ -22,6 +25,20 @@ int main(int argc, char **argv) {
     }
 
     sky_detector::SkyAreaDetector detector;
-    detector.detect(argv[1], argv[2]);
 
+    if (argc != 3) {
+        LOG(INFO) << "Usage:";
+        LOG(INFO) << "./detector 图像输入路径 图像输出路径";
+        return -1;
+    } else {
+
+#ifdef BATCH_PROCESS
+        detector.batch_detect(argv[1], argv[2]);
+#endif
+
+#ifdef SINGLE_PROCESS
+        detector.detect(argv[1], argv[2]);
+#endif
+        return 1;
+    }
 }
