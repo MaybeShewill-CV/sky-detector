@@ -51,6 +51,8 @@ bool SkyAreaDetector::load_image(const std::string &image_file_path) {
 
     _src_img = cv::imread(image_file_path, CV_LOAD_IMAGE_UNCHANGED);
 
+//    cv::resize(_src_img, _src_img, cv::Size(_src_img.size[1] * 4, _src_img.size[0] * 4));
+
     if (_src_img.empty() || !_src_img.data) {
         LOG(ERROR) << "图像文件: " << image_file_path << "读取失败" << std::endl;
         return false;
@@ -80,10 +82,6 @@ bool SkyAreaDetector::extract_sky(const cv::Mat &src_image, cv::Mat &sky_mask) {
         return false;
     }
 
-    // 优化剔除一部分天空边界
-    std::vector<int> optimized_border;
-    optimize_sky_boder(sky_border_optimal, src_image, optimized_border);
-
 #ifdef DEBUG
     cv::Mat sky_image;
     display_sky_region(src_image, optimized_border, sky_image);
@@ -94,8 +92,7 @@ bool SkyAreaDetector::extract_sky(const cv::Mat &src_image, cv::Mat &sky_mask) {
 
     if (has_partial_sky_region(sky_border_optimal, image_width / 3)) {
         std::vector<int> border_new = refine_border(sky_border_optimal, src_image);
-        optimize_sky_boder(border_new, src_image, optimized_border);
-        sky_mask = make_sky_mask(src_image, optimized_border);
+        sky_mask = make_sky_mask(src_image, border_new);
 #ifdef DEBUG
         display_sky_region(src_image, optimized_border, sky_image);
         cv::imshow("sky image with refine", sky_image);
@@ -104,7 +101,7 @@ bool SkyAreaDetector::extract_sky(const cv::Mat &src_image, cv::Mat &sky_mask) {
         return true;
     }
 
-    sky_mask = make_sky_mask(src_image, optimized_border);
+    sky_mask = make_sky_mask(src_image, sky_border_optimal);
 
     return true;
 }
@@ -132,10 +129,10 @@ void SkyAreaDetector::detect(const std::string &image_file_path, const std::stri
     int image_width = _src_img.size[1];
 
     cv::Mat sky_image_full = cv::Mat::zeros(image_height, image_width, CV_8UC3);
-    sky_image_full.setTo(cv::Scalar(0, 0, 255), sky_mask);
-    cv::addWeighted(_src_img, 1, sky_image_full, 1, 0, sky_image);
+    _src_img.setTo(cv::Scalar(0, 0, 255), sky_mask);
+//    cv::addWeighted(_src_img, 1, sky_image_full, 1, 0, sky_image);
 
-    cv::imwrite(output_path, sky_image);
+    cv::imwrite(output_path, _src_img);
 
     LOG(INFO) << "图像: " << image_file_path << "检测完毕";
 }
@@ -306,7 +303,7 @@ std::vector<int> SkyAreaDetector::refine_border(const std::vector<int> &border,
 
     row_index = 0;
     for (int row = 0; row < labels.rows; ++row) {
-        if (std::abs(labels.at<float>(row, 0) - 0.0) < 0.00000000001) {
+        if (labels.at<float>(row, 0) == 0.0) {
             sky_label_0_image.at<uchar>(row_index, 0) = sky_image_non_zero.at<uchar>(row, 0);
             sky_label_0_image.at<uchar>(row_index, 1) = sky_image_non_zero.at<uchar>(row, 1);
             sky_label_0_image.at<uchar>(row_index, 2) = sky_image_non_zero.at<uchar>(row, 2);
@@ -315,7 +312,7 @@ std::vector<int> SkyAreaDetector::refine_border(const std::vector<int> &border,
     }
     row_index = 0;
     for (int row = 0; row < labels.rows; ++row) {
-        if (std::abs(labels.at<float>(row, 0) - 1.0) < 0.00000000001) {
+        if (labels.at<float>(row, 0) == 1.0) {
             sky_label_1_image.at<uchar>(row_index, 0) = sky_image_non_zero.at<uchar>(row, 0);
             sky_label_1_image.at<uchar>(row_index, 1) = sky_image_non_zero.at<uchar>(row, 1);
             sky_label_1_image.at<uchar>(row_index, 2) = sky_image_non_zero.at<uchar>(row, 2);
@@ -593,43 +590,4 @@ cv::Mat SkyAreaDetector::make_sky_mask(const cv::Mat &src_image,
     return mask;
 }
 
-/***
- * 修正天空边界中偏离平均值太远的边界
- * @param src_border
- * @param optimal_border
- */
-void SkyAreaDetector::optimize_sky_boder(const std::vector<int> &src_border,
-        const cv::Mat &src_image,
-        std::vector<int> &optimal_border) {
-    int image_height = src_image.size[0];
-
-    std::vector<int> optimized_border(src_border.size(), 0);
-
-    int border_mean = 0;
-    int mean_count = 0;
-    for (size_t i = 0; i < src_border.size(); ++i) {
-        if (src_border[i] >= image_height * 0.75) {
-            continue;
-        }
-        mean_count++;
-        border_mean += src_border[i];
-    }
-
-    if (mean_count == 0) {
-        optimal_border = optimized_border;
-        return;
-    }
-
-    border_mean = static_cast<int>(std::floor(static_cast<double>(border_mean / mean_count)));
-
-    for (size_t i = 0; i < src_border.size(); ++i) {
-        if (src_border[i] >= image_height * 0.6) {
-            optimized_border[i] = border_mean;
-        } else {
-            optimized_border[i] = src_border[i];
-        }
-    }
-
-    optimal_border = optimized_border;
-}
 }

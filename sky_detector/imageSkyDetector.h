@@ -61,10 +61,6 @@ private:
                             cv::Mat &sky_image);
     // 制作天空掩码图
     cv::Mat make_sky_mask(const cv::Mat &src_image, const std::vector<int> &border, int type=1);
-    // 过滤掉天空边界中远离平均值的边界
-    void optimize_sky_boder(const std::vector<int> &src_border,
-                            const cv::Mat &src_image,
-                            std::vector<int> &optimal_border);
 };
 }
 
