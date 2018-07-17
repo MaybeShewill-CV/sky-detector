@@ -1,4 +1,4 @@
-# sky-detector
+# Sky-Area-Detector
 sky area detection without deep neural networks.
 A c++ implemention of the algorithm mentioned in paper 
 "Sky Region Detection in a Single Image for Autonomous Ground
