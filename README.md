@@ -45,19 +45,19 @@ cd build_dir
 
 `Test input image with full sky`
 
-![Test_input_full_sky](https://github.com/MaybeShewill-CV/sky-detector/blob/master/data/full_sky.png)
+![Test_input_full_sky](/data/full_sky.png)
 
 `Test input image with ful sky result`
 
-![Test_input_full_sky_result](https://github.com/MaybeShewill-CV/sky-detector/blob/master/data/ret_mask.jpg)
+![Test_input_full_sky_result](/data/ret_mask.jpg)
 
 `Test input image with part sky`
 
-![Test_input_part_sky](https://github.com/MaybeShewill-CV/sky-detector/blob/master/data/partial_sky.png)
+![Test_input_part_sky](/data/partial_sky.png)
 
 `Test input image with part sky result`
 
-![Test_input_part_sky_result](https://github.com/MaybeShewill-CV/sky-detector/blob/master/data/ret2.jpg)
+![Test_input_part_sky_result](/data/ret2.jpg)
 
 # TODO
 - [ ] Accelerate the calculation process
