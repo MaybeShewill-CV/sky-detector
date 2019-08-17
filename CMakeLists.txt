@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.5.1)
 project(sky-detector)
 
 set(CMAKE_CXX_STANDARD 11)
@@ -7,8 +7,6 @@ set(MAIN_SOURCE_FILE main_test.cpp)
 aux_source_directory(sky_detector DIR_SRCS)
 aux_source_directory(file_processor DIR_SRCS)
 
-
-set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 
 SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -g -Wall")
 
@@ -37,15 +35,17 @@ include_directories (
         ./file_processor
         ${OpenMP_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
-        ${Opencv_INCLUDE_DIRS}
+        ${OpenCV_INCLUDE_DIRS}
 )
 
-set(CMAKE_EXE_LINKER_FLAGS "-static-libgcc -static-libstdc++")
 add_executable(detector ${MAIN_SOURCE_FILE} ${DIR_SRCS})
 
-target_link_libraries(detector -static
-        ${OpenCV_LIBS}
-        /usr/local/lib/libboost_filesystem.a
-        /usr/local/lib/libboost_system.a
-        /usr/local/lib/libglog.a
-        )
+LINK_DIRECTORIES(/usr/local/lib /usr/lib/x86_64-linux-gnu)
+
+target_link_libraries(
+    detector
+    ${OpenCV_LIBS}
+    glog
+    boost_filesystem
+    boost_system
+)
