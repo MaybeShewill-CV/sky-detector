@@ -1,7 +1,6 @@
 /************************************************
-* Copyright 2014 Baidu Inc. All Rights Reserved.
-* Author: Luo Yao (luoyao@baidu.com)
-* File: imageQualityChecker.cpp
+* Author: MaybeShewill-CV
+* File: imageSkyDetector.cpp
 * Date: 18-6-28 上午10:28
 ************************************************/
 
